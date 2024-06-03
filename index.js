@@ -1,7 +1,6 @@
 const { Hono } = require('hono');
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
-
 import pg from 'pg'
 const { Client } = pg
 const app = new Hono();
@@ -11,7 +10,7 @@ Bun.serve({
     port: process.env.PORT || 3000,
 })
 
-
+app.use('*',cors())
 app.use('*', logger())
 
 
@@ -32,14 +31,35 @@ client.connect((err) => {
         console.log('Connected to the database');
     }
 });
-
-app.get('/test', async (c) => {
+app.get('/',(c) => {
+    return c.text("fdsfds")
+})
+app.post('/login', async (c) => {
     try {
-        // Perform a simple query to verify the connection
-        const res = await client.query({text:'SELECT * FROM public."user"'});
-        return c.text( res.rows[0].user_name)
-    } catch (err) {
-        console.error('Error executing query', err);
-        return c.json({ status: 'error', message: 'Failed to execute query' });
+        const { username, password } = await c.req.json();
+        console.log(username)
+        console.log(password)
+        //
+        const query = {
+            text: 'SELECT user_password FROM public."user" WHERE user_name = $1',
+            values: [username],
+        };
+
+        const res = await client.query(query);
+        if (res.rowCount === 0) {
+            return c.json({ state: false });
+        }
+
+        const storedPasswordHash = res.rows[0].user_password;
+        // Compare the hashed password with the provided password
+        const isMatch = password ===  storedPasswordHash
+        if (isMatch) {
+            return c.json({ state: true });
+        } else {
+            return c.json({ state: false });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        return c.json({ state: false, error: 'An error occurred' }, 500);
     }
 });
