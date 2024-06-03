@@ -1,0 +1,21 @@
+{
+  "name": "hono",
+  "module": "index.js",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "scripts": {
+    "dev": "bun --hot index.js"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.11.1",
+    "fs": "^0.0.1-security",
+    "hono": "^4.4.0",
+    "path": "^0.12.7",
+    "pg": "^8.11.5"
+  }
+}
