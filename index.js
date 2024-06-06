@@ -10,7 +10,7 @@ Bun.serve({
     port: process.env.PORT || 3000,
 })
 
-app.use('*',cors())
+app.use('*', cors())
 app.use('*', logger())
 
 
@@ -31,7 +31,7 @@ client.connect((err) => {
         console.log('Connected to the database');
     }
 });
-app.get('/',(c) => {
+app.get('/', (c) => {
     return c.text("fdsfds")
 })
 app.post('/login', async (c) => {
@@ -52,7 +52,7 @@ app.post('/login', async (c) => {
 
         const storedPasswordHash = res.rows[0].user_password;
         // Compare the hashed password with the provided password
-        const isMatch = password ===  storedPasswordHash
+        const isMatch = password === storedPasswordHash
         if (isMatch) {
             return c.json({ state: true });
         } else {
@@ -63,3 +63,30 @@ app.post('/login', async (c) => {
         return c.json({ state: false, error: 'An error occurred' }, 500);
     }
 });
+app.post('/pull', async (c) => {
+    console.log("pulling")
+    const { username } = await c.req.json();
+    console.log( username )
+    const query = {
+        text: 'SELECT * FROM public."item" WHERE user_name = $1',
+        values: [username],
+    };
+    const res = await client.query(query);
+    console.log(res.rows)
+    return c.json({list : res.rows})
+
+})
+app.post('/push', async (c) => {
+    console.log("pushing")
+    const { list, username } = await c.req.json();
+    console.log('username')
+    console.log(username)
+    list.forEach(async (element) => {
+        const query = {
+            text: 'INSERT INTO public.item (label, user_name, state) VALUES ($1, $2, $3) ON CONFLICT (label,user_name) DO UPDATE SET state = $3;',
+            values: [element.label, username, element.state],
+        };
+        const res = await client.query(query);
+    });
+    return c.json({ message: true })
+})
