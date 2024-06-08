@@ -66,27 +66,35 @@ app.post('/login', async (c) => {
 app.post('/pull', async (c) => {
     console.log("pulling")
     const { username } = await c.req.json();
-    console.log( username )
+    console.log(username)
     const query = {
         text: 'SELECT * FROM public."item" WHERE user_name = $1',
         values: [username],
     };
     const res = await client.query(query);
     console.log(res.rows)
-    return c.json({list : res.rows})
+    return c.json({ list: res.rows })
 
 })
 app.post('/push', async (c) => {
     console.log("pushing")
     const { list, username } = await c.req.json();
-    console.log('username')
     console.log(username)
     list.forEach(async (element) => {
-        const query = {
-            text: 'INSERT INTO public.item (label, user_name, state) VALUES ($1, $2, $3) ON CONFLICT (label,user_name) DO UPDATE SET state = $3;',
-            values: [element.label, username, element.state],
-        };
-        const res = await client.query(query);
+        if (element.flag === 'removed') {
+            let query = {
+                text: 'DELETE FROM public.item WHERE label = $1 AND user_name = $2 ;',
+                values: [element.label, username],
+            }
+            const res = await client.query(query);
+        }
+        else {
+            let query = {
+                text: 'INSERT INTO public.item (label, user_name, state) VALUES ($1, $2, $3) ON CONFLICT (label,user_name) DO UPDATE SET state = $3;',
+                values: [element.label, username, element.state],
+            };
+            const res = await client.query(query);
+        }
     });
     return c.json({ message: true })
 })
